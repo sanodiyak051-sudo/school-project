@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Student Records</title>
+<style>
+  :root {
+    --ink: #1f2a24;
+    --paper: #fbf8f1;
+    --moss: #4a6b4a;
+    --moss-dark: #344b34;
+    --clay: #c97b5a;
+    --line: #d9d2c2;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', 'Noto Sans Devanagari', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--moss-dark);
+    color: var(--paper);
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    letter-spacing: 0.5px;
+  }
+  header p {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-top: 4px;
+    font-family: Arial, sans-serif;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  input, select, button {
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--ink);
+  }
+  input[type="text"], input[type="search"] {
+    flex: 1;
+    min-width: 150px;
+  }
+  button {
+    background: var(--moss);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  button:hover { background: var(--moss-dark); }
+  button.danger { background: var(--clay); }
+  button.danger:hover { background: #a85f42; }
+
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 24px;
+  }
+  .form-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+    color: var(--moss-dark);
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .student-list { display: flex; flex-direction: column; gap: 10px; }
+  .student-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .student-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .student-info .name {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: var(--moss-dark);
+  }
+  .student-info .meta {
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+    color: #5a6b5a;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--moss);
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 6px;
+  }
+  .actions { display: flex; gap: 6px; }
+  .actions button {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #8a8a7a;
+    font-family: Arial, sans-serif;
+  }
+  .count {
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    color: #5a6b5a;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 500px) {
+    .student-card { flex-direction: column; align-items: flex-start; }
+    .actions { width: 100%; }
+    .actions button { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏫 School Student Records</h1>
+  <p>Sabhi bachho ki jaankaari ek jagah</p>
+</header>
+
+<div class="container">
+
+  <div class="form-card">
+    <h2 id="formTitle">Naya Student Jodein</h2>
+    <div class="form-grid">
+      <input type="text" id="name" placeholder="Naam">
+      <input type="text" id="fatherName" placeholder="Father's Name">
+      <input type="text" id="rollNo" placeholder="Roll No.">
+      <input type="text" id="className" placeholder="Class (e.g. 5-A)">
+      <input type="text" id="dob" placeholder="Date of Birth (DD/MM/YYYY)">
+      <input type="text" id="contact" placeholder="Contact No.">
+      <input type="text" id="address" placeholder="Address">
+      <input type="text" id="bloodGroup" placeholder="Blood Group">
+    </div>
+    <button onclick="saveStudent()" id="saveBtn">Save Student</button>
+    <button onclick="resetForm()" style="background:#999;">Clear</button>
+  </div>
+
+  <div class="controls">
+    <input type="search" id="searchBox" placeholder="Naam, Roll No. ya Class se search karein..." oninput="renderStudents()">
+    <select id="filterClass" onchange="renderStudents()">
+      <option value="">Sabhi Classes</option>
+    </select>
+  </div>
+
+  <div class="count" id="countText"></div>
+  <div class="student-list" id="studentList"></div>
+
+</div>
+
+<script>
+let students = [];
+let editIndex = null;
+
+function loadData() {
+  const data = localStorage.getItem('schoolStudents');
+  students = data ? JSON.parse(data) : [];
+}
+
+function saveData() {
+  localStorage.setItem('schoolStudents', JSON.stringify(students));
+}
+
+function saveStudent() {
+  const name = document.getElementById('name').value.trim();
+  const fatherName = document.getElementById('fatherName').value.trim();
+  const rollNo = document.getElementById('rollNo').value.trim();
+  const className = document.getElementById('className').value.trim();
+  const dob = document.getElementById('dob').value.trim();
+  const contact = document.getElementById('contact').value.trim();
+  const address = document.getElementById('address').value.trim();
+  const bloodGroup = document.getElementById('bloodGroup').value.trim();
+
+  if (!name || !rollNo || !className) {
+    alert('Naam, Roll No. aur Class bharna zaroori hai.');
+    return;
+  }
+
+  const student = { name, fatherName, rollNo, className, dob, contact, address, bloodGroup };
+
+  if (editIndex !== null) {
+    students[editIndex] = student;
+    editIndex = null;
+    document.getElementById('formTitle').textContent = 'Naya Student Jodein';
+    document.getElementById('saveBtn').textContent = 'Save Student';
+  } else {
+    students.push(student);
+  }
+
+  saveData();
+  resetForm();
+  renderStudents();
+}
+
+function resetForm() {
+  document.getElementById('name').value = '';
+  document.getElementById('fatherName').value = '';
+  document.getElementById('rollNo').value = '';
+  document.getElementById('className').value = '';
+  document.getElementById('dob').value = '';
+  document.getElementById('contact').value = '';
+  document.getElementById('address').value = '';
+  document.getElementById('bloodGroup').value = '';
+  editIndex = null;
+  document.getElementById('formTitle').textContent = 'Naya Student Jodein';
+  document.getElementById('saveBtn').textContent = 'Save Student';
+}
+
+function editStudent(index) {
+  const s = students[index];
+  document.getElementById('name').value = s.name;
+  document.getElementById('fatherName').value = s.fatherName;
+  document.getElementById('rollNo').value = s.rollNo;
+  document.getElementById('className').value = s.className;
+  document.getElementById('dob').value = s.dob;
+  document.getElementById('contact').value = s.contact;
+  document.getElementById('address').value = s.address;
+  document.getElementById('bloodGroup').value = s.bloodGroup;
+  editIndex = index;
+  document.getElementById('formTitle').textContent = 'Student Update Karein';
+  document.getElementById('saveBtn').textContent = 'Update Student';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function deleteStudent(index) {
+  if (confirm('Kya aap is student ki jaankaari delete karna chahte hain?')) {
+    students.splice(index, 1);
+    saveData();
+    renderStudents();
+  }
+}
+
+function updateClassFilter() {
+  const filter = document.getElementById('filterClass');
+  const current = filter.value;
+  const classes = [...new Set(students.map(s => s.className))].sort();
+  filter.innerHTML = '<option value="">Sabhi Classes</option>' +
+    classes.map(c => `<option value="${c}">${c}</option>`).join('');
+  filter.value = current;
+}
+
+function renderStudents() {
+  updateClassFilter();
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const classFilter = document.getElementById('filterClass').value;
+  const list = document.getElementById('studentList');
+
+  let filtered = students.map((s, i) => ({...s, _index: i})).filter(s => {
+    const matchesSearch = !search ||
+      s.name.toLowerCase().includes(search) ||
+      s.rollNo.toLowerCase().includes(search) ||
+      s.className.toLowerCase().includes(search);
+    const matchesClass = !classFilter || s.className === classFilter;
+    return matchesSearch && matchesClass;
+  });
+
+  document.getElementById('countText').textContent = `Total Students: ${filtered.length}`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Koi student record nahi mila. Upar form se naya student jodein.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => `
+    <div class="student-card">
+      <div class="student-info">
+        <div class="name">${escapeHtml(s.name)}</div>
+        <div class="meta">
+          <span class="badge">Class ${escapeHtml(s.className)}</span>
+          <span class="badge">Roll ${escapeHtml(s.rollNo)}</span>
+        </div>
+        <div class="meta">Father: ${escapeHtml(s.fatherName) || '-'} | DOB: ${escapeHtml(s.dob) || '-'}</div>
+        <div class="meta">Contact: ${escapeHtml(s.contact) || '-'} | Blood: ${escapeHtml(s.bloodGroup) || '-'}</div>
+        <div class="meta">Address: ${escapeHtml(s.address) || '-'}</div>
+      </div>
+      <div class="actions">
+        <button onclick="editStudent(${s._index})">Edit</button>
+        <button class="danger" onclick="deleteStudent(${s._index})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+loadData();
+renderStudents();
+</script>
+
+</body>
+</html>
